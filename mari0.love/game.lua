@@ -27,13 +27,13 @@ function game_load(suspended)
 	
 	autoscroll = true
 	
-	inputs = { "door", "groundlight", "wallindicator", "cubedispenser", "walltimer"}
-	inputsi = {28, 29, 30, 43, 44, 45, 46, 47, 48, 67, 74}
+	inputs = { "door", "groundlight", "wallindicator", "cubedispenser", "walltimer", "notgate"}
+	inputsi = {28, 29, 30, 43, 44, 45, 46, 47, 48, 67, 74, 84}
 	
-	outputs = { "button", "laserdetector", "box", "pushbutton", "walltimer"}
-	outputsi = {40, 56, 57, 58, 59, 20, 68, 69, 74}
+	outputs = { "button", "laserdetector", "box", "pushbutton", "walltimer", "notgate"}
+	outputsi = {40, 56, 57, 58, 59, 20, 68, 69, 74, 84}
 	
-	enemies = { "goomba", "koopa", "hammerbro", "plant", "lakito", "bowser", "cheep", "squid", "flyingfish", "goombahalf", "koopahalf"}
+	enemies = { "goomba", "koopa", "hammerbro", "plant", "lakito", "bowser", "cheep", "squid", "flyingfish", "goombahalf", "koopahalf", "cheepwhite", "cheepred", "koopared", "kooparedhalf", "koopa", "kooparedflying", "beetle", "beetlehalf", "spikey", "spikeyhalf"}
 	
 	jumpitems = { "mushroom", "oneup" }
 	
@@ -236,6 +236,21 @@ function game_update(dt)
 	
 	for i, v in pairs(delete) do
 		table.remove(rainbooms, v) --remove
+	end
+	
+	--userects
+	local delete = {}
+	
+	for i, v in pairs(userects) do
+		if v.delete == true then
+			table.insert(delete, i)
+		end
+	end
+	
+	table.sort(delete, function(a,b) return a>b end)
+	
+	for i, v in pairs(delete) do
+		table.remove(userects, v) --remove
 	end
 	
 	--blockbounce
@@ -574,6 +589,11 @@ function game_update(dt)
 				
 				if axex then
 					axex = axex + 1
+					objects["screenboundary"]["axe"].x = objects["screenboundary"]["axe"].x + 1
+				end
+				
+				if firestartx then
+					firestartx = firestartx + 1
 				end
 				
 				objects["screenboundary"]["right"].x = objects["screenboundary"]["right"].x + 1
@@ -931,7 +951,7 @@ function game_draw()
 						love.graphics.drawq(tilequads[t[1]].image, tilequads[t[1]].quad, math.floor((x-1-math.mod(xscroll, 1))*16*scale), ((y-1)*16-8)*scale, 0, scale, scale)
 					end
 					
-					if #t > 1 then
+					if #t > 1 and t[2] ~= "link" then
 						tilenumber = t[2]
 						love.graphics.setColor(255, 255, 255, 150)
 						love.graphics.drawq(entityquads[tilenumber].image, entityquads[tilenumber].quad, math.floor((x-1-math.mod(xscroll, 1))*16*scale), ((y-1)*16-8)*scale, 0, scale, scale)
@@ -1237,7 +1257,9 @@ function game_draw()
 								love.graphics.drawq(v.graphic[0], v.quad, math.floor(((v.x-xscroll)*16+v.offsetX)*scale), math.floor((v.y*16-v.offsetY)*scale), v.rotation, dirscale, horscale, v.quadcenterX, v.quadcenterY)
 							end
 						else
-							love.graphics.drawq(v.graphic, v.quad, math.floor(((v.x-xscroll)*16+v.offsetX)*scale), math.floor((v.y*16-v.offsetY)*scale), v.rotation, dirscale, horscale, v.quadcenterX, v.quadcenterY)
+							if v.graphic and v.quad then
+								love.graphics.drawq(v.graphic, v.quad, math.floor(((v.x-xscroll)*16+v.offsetX)*scale), math.floor((v.y*16-v.offsetY)*scale), v.rotation, dirscale, horscale, v.quadcenterX, v.quadcenterY)
+							end
 						end
 						
 						--portal duplication
@@ -1357,6 +1379,11 @@ function game_draw()
 		
 		--Walltimers
 		for j, w in pairs(objects["walltimer"]) do
+			w:draw()
+		end
+		
+		--Notgates
+		for j, w in pairs(objects["notgate"]) do
 			w:draw()
 		end
 		
@@ -1867,6 +1894,7 @@ function startlevel(level)
 	objects["groundlight"] = {}
 	objects["wallindicator"] = {}
 	objects["walltimer"] = {}
+	objects["notgate"] = {}
 	objects["lightbridge"] = {}
 	objects["lightbridgebody"] = {}
 	objects["faithplate"] = {}
@@ -1960,19 +1988,23 @@ function startlevel(level)
 	
 	--Maze setup
 	--check every block between every start/end pair to see how many gates it contains
-	mazegates = {}
-	for i = 1, #mazestarts do
-		local maxgate = 1
-		for x = mazestarts[i], mazeends[i] do
-			for y = 1, 15 do
-				if map[x][y][2] and entityquads[map[x][y][2]].t == "mazegate" then
-					if tonumber(map[x][y][3]) > maxgate then
-						maxgate = tonumber(map[x][y][3])
+	if #mazestarts == #mazeends then
+		mazegates = {}
+		for i = 1, #mazestarts do
+			local maxgate = 1
+			for x = mazestarts[i], mazeends[i] do
+				for y = 1, 15 do
+					if map[x][y][2] and entityquads[map[x][y][2]].t == "mazegate" then
+						if tonumber(map[x][y][3]) > maxgate then
+							maxgate = tonumber(map[x][y][3])
+						end
 					end
 				end
 			end
+			mazegates[i] = maxgate
 		end
-		mazegates[i] = maxgate
+	else
+		print("Mazenumber doesn't fit!")
 	end
 	
 	--background
@@ -2215,6 +2247,8 @@ function loadmap(filename)
 					
 					elseif t == "timer" then
 						table.insert(objects["walltimer"], walltimer:new(x, y, r[3], r))
+					elseif t == "notgate" then
+						table.insert(objects["notgate"], notgate:new(x, y, r))
 						
 					elseif t == "platformspawnerup" then
 						table.insert(platformspawners, platformspawner:new(x, y, "up", r[3]))
@@ -2413,7 +2447,7 @@ function game_keypressed(key, unicode)
 				pausemenuselected2 = 1
 			elseif key == "right" then
 				pausemenuselected2 = 2
-			elseif key == "return" then
+			elseif (key == "return" or key == "enter") then
 				if pausemenuselected2 == 1 then
 					love.audio.stop()
 					pausemenuopen = false
@@ -2431,7 +2465,7 @@ function game_keypressed(key, unicode)
 				pausemenuselected2 = 1
 			elseif key == "right" then
 				pausemenuselected2 = 2
-			elseif key == "return" then
+			elseif (key == "return" or key == "enter") then
 				if pausemenuselected2 == 1 then
 					love.audio.stop()
 					love.event.quit()
@@ -2447,7 +2481,7 @@ function game_keypressed(key, unicode)
 				pausemenuselected2 = 1
 			elseif key == "right" then
 				pausemenuselected2 = 2
-			elseif key == "return" then
+			elseif (key == "return" or key == "enter") then
 				if pausemenuselected2 == 1 then
 					love.audio.stop()
 					suspendgame()
@@ -2469,9 +2503,10 @@ function game_keypressed(key, unicode)
 			if pausemenuselected > 1 then
 				pausemenuselected = pausemenuselected - 1
 			end
-		elseif key == "return" then
+		elseif (key == "return" or key == "enter") then
 			if pausemenuoptions[pausemenuselected] == "resume" then
 				pausemenuopen = false
+				love.audio.resume()
 			elseif pausemenuoptions[pausemenuselected] == "suspend" then
 				suspendprompt = true
 				pausemenuselected2 = 1
@@ -3159,7 +3194,7 @@ function insideportal(x, y, width, height) --returns whether an object is in, an
 						return i, j
 					end
 				elseif portalfacing == "up" then
-					if inrange(y, portaly-height-1, portaly-1, false) and inrange(x, portalx-1.5, portalx+.5, true) then
+					if inrange(y, portaly-height-1, portaly-1, false) and inrange(x, portalx-1.5-.2, portalx+.5+.2, true) then
 						return i, j
 					end	
 				elseif portalfacing == "down" then
@@ -3488,9 +3523,9 @@ function spawnenemy(x, y)
 		elseif i == "bowser" then
 			objects["bowser"][1] = bowser:new(x, y-1/16)
 		elseif i == "cheepred" then
-			table.insert(objects["cheep"], cheepcheep:new(x, y-1/16, 1))
+			table.insert(objects["cheep"], cheepcheep:new(x-.5, y-1/16, 1))
 		elseif i == "cheepwhite" then
-			table.insert(objects["cheep"], cheepcheep:new(x, y-1/16, 2))
+			table.insert(objects["cheep"], cheepcheep:new(x-.5, y-1/16, 2))
 		elseif i == "spikey" then
 			table.insert(objects["goomba"], goomba:new(x-0.5, y-1/16, "spikey"))
 		elseif i == "spikeyhalf" then
@@ -3567,7 +3602,6 @@ function spawnenemy(x, y)
 end
 
 function item(i, x, y, size)
-	print(size)
 	if i == "mushroom" then
 		if size and size > 1 then
 			table.insert(objects["flower"], flower:new(x-0.5, y-2/16))
@@ -3795,6 +3829,7 @@ function adduserect(x, y, width, height, callback)
 	t.width = width
 	t.height = height
 	t.callback = callback
+	t.delete = false
 	
 	table.insert(userects, t)
 	return t
@@ -3836,6 +3871,16 @@ function playmusic()
 			playsound(musiclistfast[musici-1])
 		else
 			playsound(musiclist[musici-1])
+		end
+	end
+end
+
+function stopmusic()
+	if musici ~= 1 then
+		if mariotime < 100 and mariotime > 0 then
+			love.audio.stop(musiclistfast[musici-1])
+		else
+			love.audio.stop(musiclist[musici-1])
 		end
 	end
 end

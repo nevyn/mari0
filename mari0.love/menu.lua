@@ -43,7 +43,7 @@ function menu_load()
 		continueavailable = true
 	end
 	
-	--load 1-1 as backgroundDP
+	--load 1-1 as background
 	loadbackground("1-1.txt")
 	
 	skipupdate = true
@@ -174,7 +174,6 @@ end
 function menu_draw()
 	--GUI LIBRARY?! Never heard of that.
 	--I'm not proud of this at all; But I'm even lazier than not proud.
-	--
 
 	--TILES
 	love.graphics.translate(0, yoffset*scale)
@@ -369,7 +368,9 @@ function menu_draw()
 					
 					--icon
 					if mappackicon[i] ~= nil then
-						love.graphics.draw(mappackicon[i], 29*scale, (24+(i-1)*60)*scale, 0, scale, scale)
+						local scale2w = scale*50 / math.max(1, mappackicon[i]:getWidth())
+						local scale2h = scale*50 / math.max(1, mappackicon[i]:getHeight())
+						love.graphics.draw(mappackicon[i], 29*scale, (24+(i-1)*60)*scale, 0, scale2w, scale2h)
 					else
 						love.graphics.draw(mappacknoicon, 29*scale, (24+(i-1)*60)*scale, 0, scale, scale)
 					end
@@ -629,9 +630,9 @@ function menu_draw()
 			end
 			
 			if mouseowner == skinningplayer then
-				properprint("mouseowner: yes", 66*scale, 52*scale)
+				properprint("uses the mouse: yes", 46*scale, 52*scale)
 			else
-				properprint("mouseowner: no", 66*scale, 52*scale)
+				properprint("uses the mouse: no", 46*scale, 52*scale)
 			end
 			
 			for i = 1, #controlstable do
@@ -898,6 +899,38 @@ function menu_draw()
 			drawrectangle(90, 105, 1, 7)
 			drawrectangle(179, 105, 1, 7)
 			love.graphics.draw(volumesliderimg, math.floor((89+89*volume)*scale), 105*scale, 0, scale, scale)
+			
+			if optionsselection == 6 then
+				love.graphics.setColor(255, 255, 255, 255)
+			else
+				love.graphics.setColor(100, 100, 100, 255)
+			end
+			
+			properprint("reset game mappacks", 30*scale, 120*scale)
+			
+			if optionsselection == 7 then
+				love.graphics.setColor(255, 255, 255, 255)
+			else
+				love.graphics.setColor(100, 100, 100, 255)
+			end
+			
+			properprint("reset all settings", 30*scale, 135*scale)
+			
+			if optionsselection == 8 then
+				love.graphics.setColor(255, 255, 255, 255)
+			else
+				love.graphics.setColor(100, 100, 100, 255)
+			end
+			
+			properprint("vsync:", 30*scale, 150*scale)
+			if vsync then
+				properprint("on", (180-16)*scale, 150*scale)
+			else
+				properprint("off", (180-24)*scale, 150*scale)
+			end
+			
+			love.graphics.setColor(255, 255, 255, 255)
+			properprint(versionstring, 150*scale, 207*scale)
 		elseif optionstab == 4 then
 			love.graphics.setColor(255, 255, 255, 255)
 			if not gamefinished then
@@ -1021,6 +1054,39 @@ function loadbackground(background)
 	else
 		local s = love.filesystem.read( "mappacks/" .. mappack .. "/" .. background )
 		local s2 = s:split(";")
+		
+		--remove custom sprites
+		for i = smbtilecount+portaltilecount+1, #tilequads do
+			tilequads[i] = nil
+		end
+		
+		for i = smbtilecount+portaltilecount+1, #rgblist do
+			rgblist[i] = nil
+		end
+		
+		--add custom tiles
+		local bla = love.timer.getTime()
+		if love.filesystem.exists("mappacks/" .. mappack .. "/tiles.png") then
+			customtiles = true
+			customtilesimg = love.graphics.newImage("mappacks/" .. mappack .. "/tiles.png")
+			local imgwidth, imgheight = customtilesimg:getWidth(), customtilesimg:getHeight()
+			local width = math.floor(imgwidth/17)
+			local height = math.floor(imgheight/17)
+			local imgdata = love.image.newImageData("mappacks/" .. mappack .. "/tiles.png")
+			
+			for y = 1, height do
+				for x = 1, width do
+					table.insert(tilequads, quad:new(customtilesimg, imgdata, x, y, imgwidth, imgheight))
+					local r, g, b = getaveragecolor(imgdata, x, y)
+					table.insert(rgblist, {r, g, b})
+				end
+			end
+			customtilecount = width*height
+		else
+			customtiles = false
+			customtilecount = 0
+		end
+		print("Custom tileset loaded in: " .. round(love.timer.getTime()-bla, 5))
 		
 		--MAP ITSELF
 		local t = s2[1]:split(",")
@@ -1349,7 +1415,7 @@ function menu_keypressed(key, unicode)
 			if selection < 4 then
 				selection = selection + 1
 			end
-		elseif key == "return" then
+		elseif (key == "return" or key == "enter") then
 			if selection == 0 then
 				game_load(true)
 			elseif selection == 1 then
@@ -1445,7 +1511,7 @@ function menu_keypressed(key, unicode)
 					onlineupdatescroll()
 				end
 			end	
-		elseif key == "escape" or key == "return" then
+		elseif key == "escape" or (key == "return" or key == "enter") then
 			gamestate = "menu"
 			saveconfig()
 			if mappack == "custom_mappack" then
@@ -1466,7 +1532,7 @@ function menu_keypressed(key, unicode)
 				server_load()
 			end
 		elseif SERVER then
-			if key == "return" then
+			if (key == "return" or key == "enter") then
 				server_start()
 			end
 		end
@@ -1500,12 +1566,25 @@ function menu_keypressed(key, unicode)
 			end
 		end
 		
-		if key == "return" then
+		if (key == "return" or key == "enter") then
 			if optionstab == 1 then
 				if optionsselection == 3 then
-					mouseowner = skinningplayer
+					if mouseowner == skinningplayer then
+						mouseowner = skinningplayer + 1
+						if mouseowner == 5 then
+							mouseowner = 1
+						end
+					else
+						mouseowner = skinningplayer
+					end
 				elseif optionsselection > 3 then
 					keypromptstart()
+				end
+			elseif optionstab == 3 then
+				if optionsselection == 6 then
+					reset_mappacks()
+				elseif optionsselection == 7 then
+					resetconfig()
 				end
 			end
 		elseif key == "down" then
@@ -1530,7 +1609,7 @@ function menu_keypressed(key, unicode)
 					optionsselection = 1
 				end
 			elseif optionstab == 3 then
-				if optionsselection < 5 then
+				if optionsselection < 8 then
 					optionsselection = optionsselection + 1
 				else
 					optionsselection = 1
@@ -1555,7 +1634,7 @@ function menu_keypressed(key, unicode)
 				elseif optionstab == 2 then
 					optionsselection = 14
 				elseif optionstab == 3 then
-					optionsselection = 5
+					optionsselection = 8
 				elseif optionstab == 4 and gamefinished then
 					optionsselection = 8
 				end
@@ -1606,6 +1685,9 @@ function menu_keypressed(key, unicode)
 						playsound(coinsound)
 						soundenabled = true
 					end
+				elseif optionsselection == 8 then
+					vsync = not vsync
+					changescale(scale)
 				end
 			elseif optionstab == 4 then
 				if optionsselection == 2 then
@@ -1703,6 +1785,9 @@ function menu_keypressed(key, unicode)
 						love.audio.setVolume( volume )
 						playsound(coinsound)
 					end
+				elseif optionsselection == 8 then
+					vsync = not vsync
+					changescale(scale)
 				end
 			elseif optionstab == 4 then
 				if optionsselection == 2 then
@@ -1855,6 +1940,28 @@ function downloadfile(url, target)
 	love.filesystem.write(target, data)
 end
 
+function reset_mappacks()
+	delete_mappack("smb")
+	delete_mappack("portal")
+	
+	loadbackground("1-1.txt")
+	
+	playsound(oneupsound)
+end
+
+function delete_mappack(pack)
+	if not love.filesystem.exists("mappacks/" .. pack .. "/") then
+		return false
+	end
+	
+	local list = love.filesystem.enumerate("mappacks/" .. pack .. "/")
+	for i = 1, #list do
+		love.filesystem.remove("mappacks/" .. pack .. "/" .. list[i])
+	end
+	
+	love.filesystem.remove("mappacks/" .. pack .. "/")
+end
+
 function createmappack()
 	local i = 1
 	while love.filesystem.exists("mappacks/custom_mappack_" .. i .. "/") do
@@ -1871,4 +1978,17 @@ function createmappack()
 	s = s .. "description=the newest best  mappack?" .. "\n"
 	
 	love.filesystem.write("mappacks/" .. mappack .. "/settings.txt", s)
+end
+
+function resetconfig()
+	defaultconfig()
+	
+	changescale(scale)
+	love.audio.setVolume(volume)
+	currentshaderi1 = 1
+	currentshaderi2 = 1
+	shaders:set(1, nil)
+	shaders:set(2, nil)
+	saveconfig()
+	loadbackground("1-1.txt")
 end

@@ -8,7 +8,7 @@ function pushbutton:init(x, y, dir)
 	self.out = false
 	self.outtable = {}	
 
-	adduserect(x-.5, y-12/16, 4/16, 12/16, self)
+	adduserect(x-10/16, y-12/16, 4/16, 12/16, self)
 	
 	self.timer = pushbuttontime
 end

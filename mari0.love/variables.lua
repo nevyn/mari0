@@ -139,7 +139,7 @@ seesawfriction = 4
 koopaflyingdistance = 7.5
 koopaflyingtime = 7
 
-lakitothrowtime = 2
+lakitothrowtime = 4
 lakitorespawn = 16
 lakitospace = 4
 lakitodistancetime = 1.5
@@ -232,7 +232,8 @@ cubedispensertime = 1
 pushbuttontime = 1
 
 bulletbillspeed = 8.0
-bulletbilltime = 2
+bulletbilltimemax = 4.5
+bulletbilltimemin = 1.0
 bulletbillrange = 3
 
 hammerbropreparetime = 0.5

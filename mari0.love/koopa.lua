@@ -202,7 +202,7 @@ function koopa:leftcollide(a, b)
 		return false
 	end
 	
-	if a == "tile" or a == "portalwall" then		
+	if a == "tile" or a == "portalwall" or a == "spring" then		
 		if self.small then
 			self.speedx = -self.speedx
 			local x, y = b.cox, b.coy
@@ -243,7 +243,7 @@ function koopa:rightcollide(a, b)
 	if self:globalcollide(a, b) then
 		return false
 	end	
-	if a == "tile" or a == "portalwall" then		
+	if a == "tile" or a == "portalwall" or a == "spring" then		
 		if self.small then
 			self.speedx = -self.speedx
 			local x, y = b.cox, b.coy
@@ -281,10 +281,19 @@ function koopa:rightcollide(a, b)
 end
 
 function koopa:passivecollide(a, b)
-	self:leftcollide(a, b)
+	if self.speedx > 0 then
+		self:rightcollide(a, b)
+	else
+		self:leftcollide(a, b)
+	end
 end
 
 function koopa:globalcollide(a, b)
+	if a == "bulletbill" then
+		if b.killstuff ~= false then
+			return true
+		end
+	end
 	if a == "fireball" or a == "player" then
 		return true
 	end
@@ -296,7 +305,19 @@ end
 
 function koopa:floorcollide(a, b)
 	if self.t == "flying" and self.flying then
-		self:globalcollide(a, b)
+		if self:globalcollide(a, b) then
+			return false
+		end
 		self.speedy = -koopajumpforce
 	end
+end
+
+function koopa:ceilcollide(a, b)
+	if self:globalcollide(a, b) then
+		return false
+	end
+end
+
+function koopa:laser()
+	self:shotted()
 end

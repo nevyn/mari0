@@ -78,6 +78,7 @@ end
 
 function cubedispenser:removebox()
 	if self.box then
+		self.box.userect.delete = true
 		self.box.destroying = true
 	end
 end

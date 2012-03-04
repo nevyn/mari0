@@ -10,7 +10,8 @@
 ]]
 
 function love.load()
-	marioversion = 1000
+	marioversion = 1002
+	versionstring = "version 1.2"
 	shaderlist = love.filesystem.enumerate( "shaders/" )
 	
 	local rem
@@ -32,7 +33,6 @@ function love.load()
 	width = 25
 	fsaa = 16
 	fullscreen = false
-	vsync = false
 	love.graphics.setCaption( "Mari0" )
 	love.graphics.setMode(width*16*scale, 224*scale, fullscreen, vsync, fsaa) --27x14 blocks (15 blocks actual height)
 	iconimg = love.graphics.newImage("graphics/icon.gif")
@@ -107,6 +107,7 @@ function love.load()
 	require "squid"
 	require "rainboom"
 	require "miniblock"
+	require "notgate"
 	
 	http = require("socket.http")
 	
@@ -403,7 +404,11 @@ function love.load()
 	end
 	
 	bulletbillimg = love.graphics.newImage("graphics/" .. graphicspack .. "/bulletbill.png")
-	bulletbillquad = {love.graphics.newQuad(0, 0, 16, 16, 16, 32), love.graphics.newQuad(0, 16, 16, 16, 16, 32)}
+	bulletbillquad = {}
+	
+	for y = 1, 4 do
+		bulletbillquad[y] = love.graphics.newQuad(0, (y-1)*16, 16, 16, 16, 64)
+	end
 	
 	hammerbrosimg = love.graphics.newImage("graphics/" .. graphicspack .. "/hammerbros.png")
 	hammerbrosquad = {}
@@ -684,6 +689,7 @@ function love.load()
 	rainboomsound = love.audio.newSource("sounds/rainboom.ogg", "static");rainboomsound:setVolume(0);rainboomsound:play();rainboomsound:stop();rainboomsound:setVolume(1)
 	konamisound = love.audio.newSource("sounds/konami.ogg", "static");konamisound:setVolume(0);konamisound:play();konamisound:stop();konamisound:setVolume(1)
 	pausesound = love.audio.newSource("sounds/pause.ogg", "static");pausesound:setVolume(0);pausesound:play();pausesound:stop();pausesound:setVolume(1)
+	bulletbillsound = love.audio.newSource("sounds/bulletbill.ogg", "static");pausesound:setVolume(0);pausesound:play();pausesound:stop();pausesound:setVolume(1)
 	stabsound = love.audio.newSource("sounds/stab.ogg")
 	
 	
@@ -711,7 +717,7 @@ function love.load()
 	soundlist = {jumpsound, jumpbigsound, stompsound, shotsound, blockhitsound, blockbreaksound, coinsound, pipesound, boomsound, mushroomappearsound, mushroomeatsound, shrinksound, deathsound, gameoversound,
 				fireballsound, oneupsound, levelendsound, castleendsound, scoreringsound, intermissionsound, firesound, bridgebreaksound, bowserfallsound, vinesound, swimsound, rainboomsoud, 
 				portal1opensound, portal2opensound, portalentersound, portalfizzlesound, lowtime, overworldmusic, undergroundmusic, castlemusic, underwatermusic, starmusic, princessmusic, overworldmusicfast, 
-				undergroundmusicfast, castlemusicfast, underwatermusicfast, starmusicfast, princessmusicfast, konamisound, pausesound, stabsound}
+				undergroundmusicfast, castlemusicfast, underwatermusicfast, starmusicfast, princessmusicfast, konamisound, pausesound, stabsound, bulletbillsound}
 	
 	musiclist = {overworldmusic, undergroundmusic, castlemusic, underwatermusic, starmusic}
 	musiclistfast = {overworldmusicfast, undergroundmusicfast, castlemusicfast, underwatermusicfast, starmusicfast}
@@ -726,7 +732,7 @@ function love.load()
 end
 
 function love.update(dt)
-	dt = math.min(0.017543, dt)
+	dt = math.min(0.01666667, dt)
 	
 	--speed
 	if speed ~= speedtarget then
@@ -868,6 +874,10 @@ function saveconfig()
 	
 	s = s .. "mappack:" .. mappack .. ";"
 	
+	if vsync then
+		s = s .. "vsync;"
+	end
+	
 	if gamefinished then
 		s = s .. "gamefinished;"
 	end
@@ -956,6 +966,8 @@ function loadconfig()
 			end
 		elseif s2[1] == "gamefinished" then
 			gamefinished = true
+		elseif s2[1] == "vsync" then
+			vsync = true
 		end
 	end
 	
@@ -1057,6 +1069,7 @@ function defaultconfig()
 	scale = 2
 	volume = 1
 	mappack = "smb"
+	vsync = false
 end
 
 function suspendgame()
@@ -1361,5 +1374,12 @@ function print_r (t, indent) --Not by me
 		io.write(indent,'[',tostring(key),']') 
 		if type(value)=="table" then io.write(':\n') print_r(value,indent..'\t')
 		else io.write(' = ',tostring(value),'\n') end
+	end
+end
+
+function love.focus(f)
+	if not f and gamestate == "game"and not editormode and not levelfinished and not everyonedead  then
+		pausemenuopen = true
+		love.audio.pause()
 	end
 end

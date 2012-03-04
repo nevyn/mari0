@@ -370,7 +370,7 @@ function guielement:keypress(key)
 			if self.inputting then
 				if key == "escape" then
 					self.inputting = false
-				elseif key == "return" then
+				elseif (key == "return" or key == "enter") then
 					if self.func then
 						self:func()
 					else

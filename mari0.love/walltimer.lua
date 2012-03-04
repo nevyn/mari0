@@ -27,9 +27,7 @@ function walltimer:link()
 end
 
 function walltimer:addoutput(a)
-	print("added output!")
 	table.insert(self.outtable, a)
-	print(#self.outtable)
 end
 
 function walltimer:update(dt)
@@ -60,11 +58,8 @@ function walltimer:draw()
 end
 
 function walltimer:out(t)
-	print(#self.outtable)
 	for i = 1, #self.outtable do
-		print("OUT?")
 		if self.outtable[i].input then
-			print("OUT!")
 			self.outtable[i]:input(t)
 		end
 	end

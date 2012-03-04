@@ -26,7 +26,7 @@ function box:init(x, y)
 					
 	self.emancipatecheck = true
 
-	self.userect = adduserect(self.x+6/16, self.y, 4/16, 12/16, self)
+	self.userect = adduserect(self.x, self.y, 12/16, 12/16, self)
 	
 	--IMAGE STUFF
 	self.drawable = true
@@ -99,8 +99,9 @@ function box:update(dt)
 			end
 		end
 	end
-		self.userect.x = self.x+6/16
-		self.userect.y = self.y
+	
+	self.userect.x = self.x
+	self.userect.y = self.y
 
 	--check if offscreen
 	if self.y > 17 then
@@ -150,7 +151,6 @@ function box:floorcollide(a, b)
 	if a == "goomba" or a == "bulletbill" then
 		addpoints(200, self.x, self.y)
 		playsound(stompsound)
-		self.speedy = -bounceforce
 		self.falling = true
 		return false
 	end
@@ -178,6 +178,7 @@ function box:emancipate()
 end
 
 function box:destroy()
+	self.userect.delete = true
 	self.destroying = true
 	
 	for i = 1, #self.outtable do

@@ -265,8 +265,18 @@ function mario:update(dt)
 		end
 		
 		if self.startimer >= mariostarduration-mariostarrunout and self.startimer-dt < mariostarduration-mariostarrunout then
-			playmusic()
-			love.audio.stop(starmusic)
+			--check if another starman is playing
+			local starstill = false
+			for i = 1, players do
+				if i ~= self.playernumber and objects["player"][i].starred then
+					starstill = true
+				end
+			end
+			
+			if not starstill then
+				playmusic()
+				love.audio.stop(starmusic)
+			end
 		end
 		
 		if self.startimer >= mariostarduration then
@@ -1699,6 +1709,9 @@ function mario:floorcollide(a, b)
 		
 		--check for invisible block
 		if tilequads[map[x][y][1]].invisible then
+			self.jumping = jump
+			self.falling = fall
+			self.animationstate = anim
 			return false
 		end
 	end
@@ -1885,7 +1898,7 @@ function mario:rightcollide(a, b)
 		end
 		
 		--Check if it's a pipe with pipe pipe.
-		if self.falling == false and self.jumping == false then --but only on ground
+		if self.falling == false and self.jumping == false and (rightkey(self.playernumber) or intermission) then --but only on ground and rightkey
 			local t2 = map[x][y][2]
 			if t2 and entityquads[t2].t == "pipe" then
 				self:pipe(x, y, "right", tonumber(map[x][y][3]))
@@ -2516,6 +2529,7 @@ function destroyblock(x, y)
 	objects["tile"][x .. "-" .. y] = nil
 	map[x][y]["gels"] = {}
 	playsound(blockbreaksound)
+	addpoints(50)
 	
 	table.insert(blockdebristable, blockdebris:new(x-.5, y-.5, 3.5, -23))
 	table.insert(blockdebristable, blockdebris:new(x-.5, y-.5, -3.5, -23))
@@ -2610,7 +2624,7 @@ function mario:die(how)
 	self.active = false
 	prevsublevel = nil
 	
-	if not levelfinished then
+	if not levelfinished and not testlevel then
 		mariolives[self.playernumber] = mariolives[self.playernumber] - 1
 	end
 	
@@ -2653,6 +2667,7 @@ end
 
 function mario:emancipate(a)
 	self:removeportals()
+	portalprojectiles = {}
 end
 
 function mario:removeportals(i)
@@ -2780,7 +2795,7 @@ function mario:dropbox()
 	
 	for h, u in pairs(emancipationgrills) do
 		if u.dir == "hor" then
-			if inrange(self.pickup.x+6/16, u.startx-1, u.endx, true) and inrange(u.y-14/16, boyx, self.pickup.y, true) then
+			if inrange(self.pickup.x+6/16, u.startx-1, u.endx, true) and inrange(u.y-14/16, boxy, self.pickup.y, true) then
 				self.pickup:emancipate(h)
 			end
 		else
@@ -2977,7 +2992,7 @@ function mario:star()
 	self.startimer = 0
 	self.colors = starcolors[1]
 	self.starred = true
-	love.audio.stop(musiclist[musici-1])
+	stopmusic()
 	playsound(starmusic)
 end
 

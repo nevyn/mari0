@@ -4,15 +4,17 @@ function rocketlauncher:init(x, y)
 	self.x = x
 	self.y = y
 	self.id = id
-	self.timer = 0
+	self:randomtime()
+	self.timer = self.time-0.5
 	self.autodelete = true
 end
 
 function rocketlauncher:update(dt)
 	self.timer = self.timer + dt
-	if self.timer > bulletbilltime and self.x > splitxscroll[1] then
+	if self.timer > self.time and self.x > splitxscroll[1] and self.x < splitxscroll[1]+width+2 then
 		if self:fire() then
 			self.timer = 0
+			self:randomtime()
 		end
 	end
 end
@@ -33,6 +35,11 @@ function rocketlauncher:fire()
 		table.insert(objects["bulletbill"], bulletbill:new(self.x, self.y, "left"))
 		return true
 	end
+end
+
+function rocketlauncher:randomtime()
+	local rand = math.random(bulletbilltimemin*10, bulletbilltimemax*10)/10
+	self.time = rand
 end
 
 ----------------------
@@ -80,6 +87,8 @@ function bulletbill:init(x, y, dir)
 					true, true, true, true, true}
 					
 	self.shot = false
+	
+	playsound(bulletbillsound)
 end
 
 function bulletbill:update(dt)
@@ -105,14 +114,22 @@ function bulletbill:update(dt)
 			return true
 		end
 	
+		if self.rotation ~= 0 then
+			if math.abs(math.abs(self.rotation)-math.pi/2) < 0.1 then
+				self.rotation = -math.pi/2
+			else
+				self.rotation = 0
+			end
+		end
+		
 		if self.speedx < 0 then
 			self.animationdirection = "left"
 		elseif self.speedx > 0 then
 			self.animationdirection = "right"
 		elseif self.speedy < 0 then
-			self.animationdirection = "left"
-		elseif self.speedy > 0 then
 			self.animationdirection = "right"
+		elseif self.speedy > 0 then
+			self.animationdirection = "left"
 		end
 	end
 end

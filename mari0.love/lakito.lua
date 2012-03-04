@@ -37,22 +37,24 @@ end
 
 function lakito:update(dt)
 	if self.shot then
-		self.speedy = self.speedy + shotgravity*dt
-		
-		self.x = self.x+self.speedx*dt
-		self.y = self.y+self.speedy*dt
-		
-		
-		self.timer = self.timer + dt
-		if self.timer > lakitorespawn then
-			self.y = self.starty - 12/16
-			self.x = splitxscroll[#splitxscroll] + width
-			self.timer = 0
-			self.shot = false
-			self.active = true
-			self.gravity = 0
-			self.speedy = 0
-			self.speedx = 0
+		if self.passive == false then
+			self.speedy = self.speedy + shotgravity*dt
+			
+			self.x = self.x+self.speedx*dt
+			self.y = self.y+self.speedy*dt
+			
+			
+			self.timer = self.timer + dt
+			if self.timer > lakitorespawn then
+				self.y = self.starty - 12/16
+				self.x = splitxscroll[#splitxscroll] + width
+				self.timer = 0
+				self.shot = false
+				self.active = true
+				self.gravity = 0
+				self.speedy = 0
+				self.speedx = 0
+			end
 		end
 		
 	elseif self.passive then
@@ -99,11 +101,11 @@ function lakito:update(dt)
 		else
 			self.speedx = -2
 		end
+	end
 		
-		--check if switch to passive
-		if lakitoend then
-			self.passive = true
-		end
+	--check if switch to passive
+	if lakitoend then
+		self.passive = true
 	end
 end
 

@@ -219,7 +219,7 @@ function editor_draw()
 		
 		if editorstate == "linktool" and editorstate ~= "portalgun" then
 			if linktoolX and love.mouse.isDown("l") then
-				love.graphics.line(linktoolX, linktoolY, mousex, mousey)
+				love.graphics.line(math.floor((linktoolX-xscroll-.5)*16*scale), math.floor((linktoolY-1)*16*scale), mousex, mousey)
 			end
 			
 			local cox, coy = getMouseTile(mousex, mousey+8*scale)
@@ -338,14 +338,14 @@ function editor_draw()
 				end
 				properprint(newstring, 3*scale, 205*scale)
 			else
-				if tilequads[tile] then
-					if tilequads[tile].collision then
+				if tile and tilequads[tile+tileliststart-1] then
+					if tilequads[tile+tileliststart-1].collision then
 						properprint("collision: true", 3*scale, 205*scale)
 					else
 						properprint("collision: false", 3*scale, 205*scale)
 					end
 					
-					if tilequads[tile].collision and tilequads[tile].portalable then
+					if tilequads[tile+tileliststart-1].collision and tilequads[tile+tileliststart-1].portalable then
 						properprint("portalable: true", 3*scale, 215*scale)
 					else
 						properprint("portalable: false", 3*scale, 215*scale)
@@ -786,7 +786,7 @@ function editor_mousepressed(x, y, button)
 					local tile = r[2]
 					--LIST OF NUMBERS THAT ARE ACCEPT AS OUTPUT (doors, lights)
 					if tablecontains( inputsi, r[2] ) then
-						linktoolX, linktoolY = x, y
+						linktoolX, linktoolY = tileX, tileY
 					end
 				end
 			elseif editorstate ~= "portalgun" then
@@ -911,7 +911,7 @@ function editor_mousereleased(x, y, button)
 		minimapdragging = false
 		if editorstate == "linktool" then
 			if linktoolX then
-				local startx, starty = getMouseTile(linktoolX, linktoolY+8*scale)
+				local startx, starty = linktoolX, linktoolY
 				local endx, endy = getMouseTile(x, y+8*scale)
 				
 				local r = map[endx][endy]

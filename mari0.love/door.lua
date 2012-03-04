@@ -106,7 +106,6 @@ function door:pushstuff()
 end
 
 function door:input(t)
-	print("in: " .. t)
 	if t == "on" then
 		self.open = true
 		if self.timer == 1 then

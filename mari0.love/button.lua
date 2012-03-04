@@ -10,7 +10,7 @@ function button:init(x, y)
 	self.width = 30/16
 	self.height = 3/16
 	self.static = true
-	self.active = true
+	self.active = false
 	self.category = 22
 	
 	self.mask = {true}

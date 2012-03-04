@@ -207,6 +207,12 @@ function goomba:ceilcollide(a, b)
 end
 
 function goomba:globalcollide(a, b)
+	if a == "bulletbill" then
+		if b.killstuff ~= false then
+			return true
+		end
+	end
+	
 	if a == "fireball" or a == "player" then
 		return true
 	end
@@ -251,5 +257,9 @@ function goomba:floorcollide(a, b)
 end
 
 function goomba:emancipate(a)
+	self:shotted()
+end
+
+function goomba:laser()
 	self:shotted()
 end

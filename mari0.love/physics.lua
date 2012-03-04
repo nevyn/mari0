@@ -105,15 +105,18 @@ function physicsupdate(dt)
 					
 					for x = xfrom, xto, dir do
 						for y = ystart, ystart+math.ceil(v.height) do
-							local t = lobjects["tile"][x .. "-" .. y]
-							if t then
-								--    Same object          Active        Not masked
-								if (i ~= g or j ~= h) and t.active and v.mask[t.category] ~= true then
-									local collision1, collision2 = checkcollision(v, t, "tile", x .. "-" .. y, j, i, dt, passed)
-									if collision1 then
-										horcollision = true
-									elseif collision2 then
-										vercollision = true
+							--check if invisible block
+							if inmap(x, y) and (not tilequads[map[x][y][1]].invisible or j == "player") then
+								local t = lobjects["tile"][x .. "-" .. y]
+								if t then
+									--    Same object          Active        Not masked
+									if (i ~= g or j ~= h) and t.active and v.mask[t.category] ~= true then
+										local collision1, collision2 = checkcollision(v, t, "tile", x .. "-" .. y, j, i, dt, passed)
+										if collision1 then
+											horcollision = true
+										elseif collision2 then
+											vercollision = true
+										end
 									end
 								end
 							end
@@ -499,8 +502,7 @@ function inportal(self)
 				local exitportalfacing = v.portal2facing
 				
 				self.x, self.y, self.speedx, self.speedy, self.rotation = portalcoords(self.x, self.y, self.speedx, self.speedy, self.width, self.height, self.rotation, self.animationdirection, entryportalX, entryportalY, entryportalfacing, exitportalX, exitportalY, exitportalfacing, self, true)
-				self.speedx = 0
-				self.speedy = 0
+
 			elseif (x == portal2X or x == portal2X + portal2xplus) and (y == portal2Y or y == portal2Y + portal2yplus) then
 				local entryportalX = v.portal2X
 				local entryportalY = v.portal2Y
@@ -511,8 +513,7 @@ function inportal(self)
 				local exitportalfacing = v.portal1facing
 				
 				self.x, self.y, self.speedx, self.speedy, self.rotation = portalcoords(self.x, self.y, self.speedx, self.speedy, self.width, self.height, self.rotation, self.animationdirection, entryportalX, entryportalY, entryportalfacing, exitportalX, exitportalY, exitportalfacing, self)
-				self.speedx = 0
-				self.speedy = 0
+
 			end
 		end
 	end

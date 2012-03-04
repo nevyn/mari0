@@ -84,7 +84,7 @@ entitylist = {
 	"warppipe",
 	"castlefirecw",
 	"lakitoend",
-	"",
+	"notgate",
 	"",
 	"",
 	"",
@@ -187,7 +187,7 @@ entitydescriptions = {
 	"place on wall - warp pipe - right click for destination world", --"warppipe",
 	"place on wall - clockwise rotating fire - right click for width", --"castlefirecw",
 	"place anywhere - defines a right border for lakito - use with lakito", --"lakitoend",
-	"place nowhere - unused",
+	"place anywhere - turns in input around", --notgate
 	"place nowhere - unused",
 	"place nowhere - unused",
 	"place nowhere - unused",

@@ -8,9 +8,15 @@ function laser:init(x, y, dir)
 	self.blocked = false
 	self.lasertable = {}
 	self.outtable = {}
+	
+	self.framestart = 0
 end
 
 function laser:update(dt)
+	if self.framestart < 2 then
+		self.framestart = self.framestart + 1
+		return
+	end
 	local x, y, width, height
 	local col = false
 	
@@ -22,7 +28,7 @@ function laser:update(dt)
 			width = -self.lasertable[i+3]+1
 			height = 2/16
 			
-			local rectcol = checkrect(x, y, width, height, {"player", "box"})
+			local rectcol = checkrect(x, y, width, height, {"player", "box", "goomba", "koopa"})
 			
 			if #rectcol > 0 then
 				col = true
@@ -64,7 +70,7 @@ function laser:update(dt)
 			width = self.lasertable[i+3]+1
 			height = 2/16
 			
-			local rectcol = checkrect(x, y, width, height, {"player", "box"})
+			local rectcol = checkrect(x, y, width, height, {"player", "box", "goomba", "koopa"})
 			
 			if #rectcol > 0 then
 				col = true
@@ -106,7 +112,7 @@ function laser:update(dt)
 			width = 2/16
 			height = -self.lasertable[i+4]+1
 			
-			local rectcol = checkrect(x, y, width, height, {"player", "box"})
+			local rectcol = checkrect(x, y, width, height, {"player", "box", "goomba", "koopa"})
 			
 			if #rectcol > 0 then
 				col = true
@@ -148,7 +154,7 @@ function laser:update(dt)
 			width = 2/16
 			height = self.lasertable[i+4]+1
 			
-			local rectcol = checkrect(x, y, width, height, {"player", "box"})
+			local rectcol = checkrect(x, y, width, height, {"player", "box", "goomba", "koopa"})
 			
 			if #rectcol > 0 then
 				col = true
