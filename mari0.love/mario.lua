@@ -1,9 +1,12 @@
 mario = class:new()
 
 function mario:init(x, y, i, animation, size, t)
-	
 	self.playernumber = i or 1
-	self.size = size or 1
+	if bigmario then
+		self.size = 1
+	else
+		self.size = size or 1
+	end
 	self.t = t or "portal"
 	
 	--PHYSICS STUFF
@@ -63,7 +66,6 @@ function mario:init(x, y, i, animation, size, t)
 	self.quad = marioidle[3]
 	self.colors = mariocolors[self.playernumber]
 	if self.size == 1 then
-		self.drawhat = true
 		self.offsetX = 6
 		self.offsetY = 3
 		self.quadcenterX = 11
@@ -71,7 +73,6 @@ function mario:init(x, y, i, animation, size, t)
 		
 		self.graphic = self.smallgraphic
 	else
-		self.drawhat = false
 		self.graphic = self.biggraphic
 		
 		self.quadcenterY = 20
@@ -94,6 +95,7 @@ function mario:init(x, y, i, animation, size, t)
 	
 	--hat
 	self.hats = mariohats[self.playernumber]
+	self.drawhat = true
 	
 	--Change height according to hats
 	
@@ -172,6 +174,15 @@ function mario:init(x, y, i, animation, size, t)
 		self.animation = nil
 	end
 	
+	if mariolivecount ~= false and mariolives[self.playernumber] <= 0 then
+		self.dead = true
+		self.drawable = false
+		self.active = false
+		self.static = true
+		self.controlsenabled = false
+		self.animation = nil
+	end
+	
 	if self.animation == "pipeup" then
 		self.controlsenabled = false
 		self.active = false
@@ -213,13 +224,6 @@ function mario:init(x, y, i, animation, size, t)
 	end
 	
 	self:setquad()
-	
-	if mariolives[i] <= 0 then
-		self.dead = true
-		self.drawable = false
-		self.active = false
-		self.controlsenabled = false
-	end
 end
 
 function mario:update(dt)
@@ -245,7 +249,7 @@ function mario:update(dt)
 		end
 	end
 	
-	if self.startimer < mariostarduration then
+	if self.startimer < mariostarduration and not self.dead then
 		self.startimer = self.startimer + dt
 		self.starblinktimer = self.starblinktimer + dt
 		
@@ -275,7 +279,7 @@ function mario:update(dt)
 			
 			if not starstill then
 				playmusic()
-				love.audio.stop(starmusic)
+				music:stop("starmusic")
 			end
 		end
 		
@@ -552,7 +556,7 @@ function mario:update(dt)
 			if self.animationtimer - dt < endanimationtextsecondline and self.animationtimer >= endanimationtextsecondline then
 				levelfinishedmisc = 2
 				love.audio.stop()
-				playsound(princessmusic)
+				music:play("princessmusic")
 			end
 		
 			if self.animationtimer - dt < endanimationtextthirdline and self.animationtimer >= endanimationtextthirdline then
@@ -675,22 +679,22 @@ function mario:update(dt)
 		self:updateangle()
 	
 		if frame == 1 then
-			self.drawhat = false
 			self.graphic = self.biggraphic
 			self:setquad("idle", 2)
 			self.quadcenterY = 32
 			self.quadcenterX = 9
 			self.offsetY = -3
+			self.animationstate = "idle"
 		else
 			self.graphic = self.smallgraphic
 			self.quadcenterX = 11
 			self.offsetY = 3
 			if frame == 2 then
-				self.drawhat = false
+				self.animationstate = "grow"
 				self:setquad("grow")
 				self.quadcenterY = 16
 			else
-				self.drawhat = true
+				self.animationstate = "idle"
 				self:setquad()
 				self.quadcenterY = 10
 			end
@@ -705,9 +709,9 @@ function mario:update(dt)
 		end
 		
 		if self.animationtimer - dt < shrinktime and self.animationtimer > shrinktime then
+			self.animationstate = self.animationmisc
 			self.animation = "invincible"
 			self.invincible = true
-			self.drawhat = true
 			noupdate = false
 			self.quadcenterY = 10
 			self.graphic = self.smallgraphic
@@ -741,7 +745,7 @@ function mario:update(dt)
 		self:updateangle()
 		
 		if frame == 3 then
-			self.drawhat = false
+			self.animationstate = "idle"
 			self.graphic = self.biggraphic
 			self:setquad("idle")
 			self.quadcenterY = 20
@@ -752,19 +756,19 @@ function mario:update(dt)
 			self.quadcenterX = 11
 			self.offsetY = 3
 			if frame == 2 then
-				self.drawhat = false
+				self.animationstate = "grow"
 				self:setquad("grow", 1)
 				self.quadcenterY = 4
 			else
-				self.drawhat = true
+				self.animationstate = "idle"
 				self:setquad(nil, 1)
 				self.quadcenterY = -2
 			end
 		end
 		
 		if self.animationtimer - dt < growtime and self.animationtimer > growtime then
+			self.animationstate = self.animationmisc
 			self.animation = false
-			self.drawhat = false
 			noupdate = false
 			self.quadcenterY = 20
 			self.graphic = self.biggraphic
@@ -784,7 +788,6 @@ function mario:update(dt)
 		
 		if self.animationtimer - dt < growtime and self.animationtimer > growtime then
 			self.animation = false
-			self.drawhat = false
 			noupdate = false
 			self.animationtimer = 0
 		end
@@ -814,7 +817,7 @@ function mario:update(dt)
 			
 			self.y = self.y-vinemovespeed*dt
 			
-			local t = checkrect(self.x, self.y, self.width, self.height, {"tile"})
+			local t = checkrect(self.x, self.y, self.width, self.height, {"tile", "portalwall"})
 			if #t ~= 0 then
 				self.y = objects[t[1]][t[2]].y + objects[t[1]][t[2]].height
 				self.climbframe = 2
@@ -829,7 +832,7 @@ function mario:update(dt)
 			
 			self.y = self.y+vinemovedownspeed*dt
 			
-			local t = checkrect(self.x, self.y, self.width, self.height, {"tile"})
+			local t = checkrect(self.x, self.y, self.width, self.height, {"tile", "portalwall"})
 			if #t ~= 0 then
 				self.y = objects[t[1]][t[2]].y - self.height
 				self.climbframe = 2
@@ -1615,6 +1618,7 @@ function mario:leftkey()
 end
 
 function mario:grow()
+	self.animationmisc = self.animationstate
 	if self.animation and self.animation ~= "invincible" then
 		return
 	end
@@ -1629,7 +1633,6 @@ function mario:grow()
 		
 	else
 		self.size = self.size + 1
-		self.drawhat = false
 		if self.size == 2 then		
 			self.y = self.y - 12/16
 			self.height = 24/16
@@ -1651,6 +1654,7 @@ function mario:grow()
 end
 
 function mario:shrink()
+	self.animationmisc = self.animationstate
 	if self.animation then
 		return
 	end
@@ -1696,7 +1700,9 @@ function mario:floorcollide(a, b)
 	if self.speedx == 0 then
 		self.animationstate = "idle"
 	else
-		self.animationstate = "running"
+		if self.animationstate ~= "sliding" then
+			self.animationstate = "running"
+		end
 	end
 	self:setquad()
 
@@ -1746,66 +1752,9 @@ function mario:floorcollide(a, b)
 	if a == "mushroom" or a == "oneup" or a == "star" or a == "flower" then
 		self.falling = true
 		return false
-	elseif (a == "goomba" and b.t == "goomba") or a == "bulletbill" or a == "flyingfish" or a == "lakito" or a == "hammerbro" then
-		b:stomp()
-		if self.combo < #mariocombo then
-			addpoints(mariocombo[self.combo], self.x, self.y)
-			if a ~= "bulletbill" then
-				self.combo = self.combo + 1
-			end
-		else
-			mariolives[self.playernumber] = mariolives[self.playernumber]+1
-			table.insert(scrollingscores, scrollingscore:new("1up", self.x, self.y))
-			playsound(oneupsound)
-		end
-		playsound(stompsound)
-		
-		local grav = self.gravity or yacceleration
-		
-		local bouncespeed = math.sqrt(2*grav*bounceheight)
-		
-		self.speedy = -bouncespeed
-		self.falling = true
-		self.animationstate = "jumping"
-		self:setquad()
+	elseif (a == "goomba" and b.t == "goomba") or a == "bulletbill" or a == "flyingfish" or a == "lakito" or a == "hammerbro" or a == "koopa" then
+		self:stompenemy(a, b)
 		return false
-	elseif a == "koopa" then		
-		if b.small then	
-			playsound(shotsound)
-			if b.speedx == 0 then
-				addpoints(500, b.x, b.y)
-				self.combo = 1
-			end
-		else
-			playsound(stompsound)
-		end
-		
-		b:stomp(self.x, self)
-		
-		if b.speedx == 0 or ((b.t == "redflying" or b.t == "flying") and b.small == false) then
-			addpoints(mariocombo[self.combo], self.x, self.y)
-			if self.combo < #mariocombo then
-				self.combo = self.combo + 1
-			end
-		
-			local grav = self.gravity or yacceleration
-			
-			local bouncespeed = math.sqrt(2*grav*bounceheight)
-			
-			self.speedy = -bouncespeed
-			
-			self.falling = true
-			self.animationstate = "jumping"
-			self:setquad()
-			self.y = b.y - self.height-1/16
-			return false
-		elseif b.x > self.x then
-			b.x = self.x + b.width + self.speedx*gdt + 0.05
-			return false
-		else
-			b.x = self.x - b.width + self.speedx*gdt - 0.05
-			return false
-		end
 	elseif a == "tile" then
 		local x, y = b.cox, b.coy
 		
@@ -1845,6 +1794,83 @@ function mario:floorcollide(a, b)
 	self.combo = 1
 end
 
+function mario:stompenemy(a, b)
+	local bounce = false
+	if a == "koopa" then
+		if b.small then	
+			playsound(shotsound)
+			if b.speedx == 0 then
+				addpoints(500, b.x, b.y)
+				self.combo = 1
+			end
+		else
+			playsound(stompsound)
+		end
+		
+		b:stomp(self.x, self)
+		
+		if b.speedx == 0 or ((b.t == "redflying" or b.t == "flying") and b.small == false) then
+			addpoints(mariocombo[self.combo], self.x, self.y)
+			if self.combo < #mariocombo then
+				self.combo = self.combo + 1
+			end
+		
+			local grav = self.gravity or yacceleration
+			
+			local bouncespeed = math.sqrt(2*grav*bounceheight)
+			
+			self.speedy = -bouncespeed
+			
+			self.falling = true
+			self.animationstate = "jumping"
+			self:setquad()
+			self.y = b.y - self.height-1/16
+		elseif b.x > self.x then
+			b.x = self.x + b.width + self.speedx*gdt + 0.05
+			local col = checkrect(b.x, b.y, b.width, b.height, {"tile"})
+			if #col > 1 then
+				b.x = objects[col[1]][col[2]].x-b.width
+				bounce = true
+			end
+		else
+			b.x = self.x - b.width + self.speedx*gdt - 0.05
+			local col = checkrect(b.x, b.y, b.width, b.height, {"tile"})
+			if #col > 1 then
+				b.x = objects[col[1]][col[2]].x+1
+				bounce = true
+			end
+		end
+	else
+		b:stomp()
+		if self.combo < #mariocombo then
+			addpoints(mariocombo[self.combo], self.x, self.y)
+			if a ~= "bulletbill" then
+				self.combo = self.combo + 1
+			end
+		else
+			if mariolivecount ~= false then
+				mariolives[self.playernumber] = mariolives[self.playernumber]+1
+			end
+			table.insert(scrollingscores, scrollingscore:new("1up", self.x, self.y))
+			playsound(oneupsound)
+		end
+		playsound(stompsound)
+		
+		bounce = true
+	end
+	
+	if bounce then
+		local grav = self.gravity or yacceleration
+		
+		local bouncespeed = math.sqrt(2*grav*bounceheight)
+		
+		self.animationstate = "jumping"
+		self.falling = true
+		self:setquad()
+		self.speedy = -bouncespeed
+	end
+end
+
 function mario:rightcollide(a, b)
 	if self:globalcollide(a, b) then
 		return false
@@ -1858,6 +1884,9 @@ function mario:rightcollide(a, b)
 	end
 	
 	if a == "mushroom" or a == "oneup" or a == "star" or a == "flower" or (a == "platform" and (b.dir == "right" or b.dir == "justright")) then
+		return false
+	elseif self.speedy > 2 and ((a == "goomba" and b.t == "goomba") or a == "bulletbill" or a == "flyingfish" or a == "lakito" or a == "hammerbro" or a == "koopa") then
+		self:stompenemy(a, b)
 		return false
 	elseif a == "castlefirefire" or a == "fire" or a == "koopa" or a == "goomba" or a == "bulletbill" or a == "plant" or a == "bowser" or a == "cheep" or a == "flyingfish" or a == "upfire" or a == "lakito" or a == "squid" or a == "hammer" or a == "hammerbro" then --KILLS
 		if self.invincible then
@@ -1968,6 +1997,9 @@ function mario:leftcollide(a, b)
 	end
 	
 	if a == "mushroom" or a == "oneup" or a == "star" or a == "flower" or (a == "platform" and (b.dir == "right" or b.dir == "justright")) then --NOTHING
+		return false
+	elseif self.speedy > 2 and ((a == "goomba" and b.t == "goomba") or a == "bulletbill" or a == "flyingfish" or a == "lakito" or a == "hammerbro" or a == "koopa") then
+		self:stompenemy(a, b)
 		return false
 	elseif a == "castlefirefire" or a == "fire" or a == "koopa" or a == "goomba" or a == "bulletbill" or a == "plant" or a == "bowser" or a == "cheep" or a == "flyingfish" or a == "upfire" or a == "lakito" or a == "squid" or a == "hammer" or a == "hammerbro" then --KILLS
 		if self.invincible then
@@ -2090,7 +2122,7 @@ function mario:ceilcollide(a, b)
 				if x > 1 and tilequads[map[x-1][y][1]].collision == true then
 					x = x - 1
 				else
-					local col = checkrect(x-28/16, self.y, self.width, self.height, {"lightbridgebodies"})
+					local col = checkrect(x-28/16, self.y, self.width, self.height, {"exclude", self}, true)
 					if #col == 0 then
 						self.x = x-28/16
 						if self.speedx > 0 then
@@ -2104,7 +2136,7 @@ function mario:ceilcollide(a, b)
 				if x < mapwidth and tilequads[map[x+1][y][1]].collision == true then
 					x = x + 1
 				else
-					local col = checkrect(self.x, self.y, self.width, self.height, {"lightbridgebodies"})
+					local col = checkrect(x, self.y, self.width, self.height, {"exclude", self}, true)
 					if #col == 0 then
 						self.x = x
 						if self.speedx < 0 then
@@ -2396,9 +2428,11 @@ function hitblock(x, y, t)
 				table.insert(coinblockanimations, coinblockanimation:new(x-0.5, y-1))
 				mariocoincount = mariocoincount + 1
 				if mariocoincount == 100 then
-					for i = 1, players do
-						mariolives[i] = mariolives[i] + 1
-						respawnplayers()
+					if mariolivecount ~= false then
+						for i = 1, players do
+							mariolives[i] = mariolives[i] + 1
+							respawnplayers()
+						end
 					end
 					mariocoincount = 0
 					playsound(oneupsound)
@@ -2413,9 +2447,11 @@ function hitblock(x, y, t)
 			mariocoincount = mariocoincount + 1
 			
 			if mariocoincount == 100 then
-				for i = 1, players do
-					mariolives[i] = mariolives[i] + 1
-					respawnplayers()
+				if mariolivecount ~= false then
+					for i = 1, players do
+						mariolives[i] = mariolives[i] + 1
+						respawnplayers()
+					end
 				end
 				mariocoincount = 0
 				playsound(oneupsound)
@@ -2591,7 +2627,6 @@ function mario:die(how)
 	playsound(deathsound)
 	
 	if how == "time" then
-		self.drawhat = true
 		noupdate = false
 		self.quadcenterY = 10
 		self.graphic = self.smallgraphic
@@ -2624,7 +2659,7 @@ function mario:die(how)
 	self.active = false
 	prevsublevel = nil
 	
-	if not levelfinished and not testlevel then
+	if not levelfinished and not testlevel and not infinitelives and mariolivecount ~= false then
 		mariolives[self.playernumber] = mariolives[self.playernumber] - 1
 	end
 	
@@ -2667,7 +2702,20 @@ end
 
 function mario:emancipate(a)
 	self:removeportals()
-	portalprojectiles = {}
+	
+	local delete = {}
+	
+	for i, v in pairs(portalprojectiles) do
+		if v.payload[1] == self.playernumber then
+			table.insert(delete, i)
+		end
+	end
+	
+	table.sort(delete, function(a,b) return a>b end)
+	
+	for i, v in pairs(delete) do
+		table.remove(portalprojectiles, v) --remove
+	end
 end
 
 function mario:removeportals(i)
@@ -2993,7 +3041,7 @@ function mario:star()
 	self.colors = starcolors[1]
 	self.starred = true
 	stopmusic()
-	playsound(starmusic)
+	music:play("starmusic")
 end
 
 function mario:fire()
@@ -3022,9 +3070,11 @@ function collectcoin(x, y)
 	playsound(coinsound)
 	mariocoincount = mariocoincount + 1
 	if mariocoincount == 100 then
-		for i = 1, players do
-			mariolives[i] = mariolives[i] + 1
-			respawnplayers()
+		if mariolivecount ~= false then
+			for i = 1, players do
+				mariolives[i] = mariolives[i] + 1
+				respawnplayers()
+			end
 		end
 		mariocoincount = 0
 		playsound(oneupsound)
@@ -3032,6 +3082,9 @@ function collectcoin(x, y)
 end
 
 function mario:portaled(dir)
+	if self.pickup then
+		self.pickup:portaled()
+	end
 	if not sonicrainboom or not self.rainboomallowed then
 		return
 	end
@@ -3088,7 +3141,7 @@ function mario:shootgel(i)
 end
 
 function mario:respawn()
-	if mariolives[self.playernumber] == 0 or levelfinished then
+	if mariolivecount ~= false and (mariolives[self.playernumber] == 0 or levelfinished) then
 		return
 	end
 	
@@ -3108,7 +3161,6 @@ function mario:respawn()
 	self.speedy = 0
 	self.speedx = 0
 	self.dead = false
-	self.drawhat = true
 	self.quadcenterY = 10
 	self.height = 12/16
 	self.graphic = self.smallgraphic
@@ -3125,6 +3177,9 @@ function mario:respawn()
 	
 	self.y = fastestplayer.y + fastestplayer.height-12/16
 	self.x = fastestplayer.x
+	
+	self.jumping = false
+	self.falling = true
 	
 	self.controlsenabled = true
 	self.active = true

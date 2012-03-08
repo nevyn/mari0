@@ -32,7 +32,7 @@
 --20: HAMMERBROS
 --21: LAKITO
 
---22: BUTTON
+--22: BUTTON --Not used anymore
 --23: CASTLEFIRE
 --24: CHEEP CHEEP
 --25: DOOR
